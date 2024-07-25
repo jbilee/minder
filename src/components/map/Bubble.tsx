@@ -1,12 +1,12 @@
 import { Group, Rect, Text } from "react-konva";
 
-type BubblePropp = {
+type BubbleProps = {
   text: string;
   x: number;
   y: number;
 };
 
-export default function Bubble({ text, x, y }: BubblePropp) {
+export default function Bubble({ text, x, y }: BubbleProps) {
   return (
     <Group draggable>
       <Rect
