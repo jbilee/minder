@@ -1,9 +1,10 @@
 "use client";
 
-import { type FormEvent, useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Layer, Stage } from "react-konva";
 import Konva from "konva";
 import Bubble from "./Bubble";
+import NewBubbleForm from "./NewBubbleForm";
 import type { KonvaEventObject } from "konva/lib/Node";
 
 type BubbleProps = {
@@ -35,7 +36,6 @@ export default function KonvaCanvas() {
     x: window.innerWidth,
     y: window.innerHeight,
   });
-  const [input, setInput] = useState("");
   const [bubbles, setBubbles] = useState<BubbleProps[]>([]);
 
   useEffect(() => {
@@ -43,20 +43,18 @@ export default function KonvaCanvas() {
       setCanvasSize({ x: window.innerWidth, y: window.innerHeight });
     };
     window.addEventListener("resize", handleResize);
+    Konva.hitOnDragEnabled = true; // For pinch zoom on touch devices -- remove if there's conflict with other pieces of code
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (input === "") return;
+  const createBubble = (text: string) => {
     const newBubble = {
-      text: input,
+      text,
       id: crypto.randomUUID(),
       x: getRandomValue(0, 900),
       y: getRandomValue(0, 500),
     };
     setBubbles((prev) => [...prev, newBubble]);
-    setInput("");
   };
 
   const activate = (target: Konva.Group) => {
@@ -151,12 +149,7 @@ export default function KonvaCanvas() {
           </Layer>
         </Stage>
       </div>
-      <div className="fixed bottom-2">
-        <form onSubmit={onSubmit}>
-          <input type="text" value={input} onChange={(e) => setInput(e.target.value)} />
-          <input type="submit" value="Add" />
-        </form>
-      </div>
+      <NewBubbleForm createBubble={createBubble} />
     </>
   );
 }
