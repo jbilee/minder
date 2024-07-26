@@ -140,15 +140,13 @@ export default function KonvaCanvas() {
 
   return (
     <>
-      <div>
-        <Stage width={canvasSize.x} height={canvasSize.y} draggable>
-          <Layer onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
-            {bubbles.map((elem) => (
-              <Bubble key={elem.id} text={elem.text} x={elem.x} y={elem.y} />
-            ))}
-          </Layer>
-        </Stage>
-      </div>
+      <Stage width={canvasSize.x} height={canvasSize.y} draggable>
+        <Layer onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
+          {bubbles.map((elem) => (
+            <Bubble key={elem.id} text={elem.text} x={elem.x} y={elem.y} />
+          ))}
+        </Layer>
+      </Stage>
       <NewBubbleForm createBubble={createBubble} />
     </>
   );
