@@ -29,7 +29,34 @@ const haveIntersection = (r1: RectConfig, r2: RectConfig) => {
   return !(r2.x > r1.x + r1.width || r2.x + r2.width < r1.x || r2.y > r1.y + r1.height || r2.y + r2.height < r1.y);
 };
 
-export default function KonvaCanvas() {
+const activate = (target: Konva.Group) => {
+  const rect = target.children[0] as Konva.Rect;
+  rect.fill("yellow");
+  rect.stroke("black");
+};
+
+const deactivate = (target: Konva.Group) => {
+  const rect = target.children[0] as Konva.Rect;
+  rect.fill("blue");
+  rect.stroke("");
+};
+
+const getCoverage = (r1: RectConfig, r2: RectConfig) => {
+  const xDifference = r1.x < r2.x ? r1.x + r1.width - r2.x : r2.x + r2.width - r1.x;
+  const yDifference = r1.y < r2.y ? r1.y + r1.height - r2.y : r2.y + r2.height - r1.y;
+  return xDifference * yDifference;
+};
+
+const findClosest = (array: Konva.Group[], target: RectConfig) => {
+  const closest = array.reduce((max, cur) => {
+    const maxCoverage = max ? getCoverage(max.getClientRect(), target) : 0;
+    const curCoverage = getCoverage(cur.getClientRect(), target);
+    return maxCoverage > curCoverage ? max : cur;
+  }, array[0]);
+  return closest;
+};
+
+export default function Canvas() {
   const currentTarget = useRef<null | Konva.Group>(null);
   const inRange = useRef<Konva.Group[]>([]);
   const [canvasSize, setCanvasSize] = useState({
@@ -57,37 +84,11 @@ export default function KonvaCanvas() {
     setBubbles((prev) => [...prev, newBubble]);
   };
 
-  const activate = (target: Konva.Group) => {
-    const rect = target.children[0] as Konva.Rect;
-    rect.fill("yellow");
-    rect.stroke("black");
-  };
-
-  const deactivate = (target: Konva.Group) => {
-    const rect = target.children[0] as Konva.Rect;
-    rect.fill("blue");
-    rect.stroke("");
-  };
-
-  const getCoverage = (r1: RectConfig, r2: RectConfig) => {
-    const xDifference = r1.x < r2.x ? r1.x + r1.width - r2.x : r2.x + r2.width - r1.x;
-    const yDifference = r1.y < r2.y ? r1.y + r1.height - r2.y : r2.y + r2.height - r1.y;
-    return xDifference * yDifference;
-  };
-
-  const findClosest = (array: Konva.Group[], target: RectConfig) => {
-    const closest = array.reduce((max, cur) => {
-      const maxCoverage = max ? getCoverage(max.getClientRect(), target) : 0;
-      const curCoverage = getCoverage(cur.getClientRect(), target);
-      return maxCoverage > curCoverage ? max : cur;
-    }, array[0]);
-    return closest!;
-  };
-
   const handleDragMove = (e: KonvaEventObject<DragEvent>) => {
     const layerComp = e.currentTarget as Konva.Layer;
     const target = e.target as Konva.Group;
-    target.setZIndex(100);
+    target.setZIndex(bubbles.length - 1);
+
     layerComp.children.forEach((group) => {
       if (group === target) return;
       if (group instanceof Konva.Group) {
@@ -124,18 +125,11 @@ export default function KonvaCanvas() {
   };
 
   const handleDragEnd = (e: KonvaEventObject<DragEvent>) => {
-    console.log(e);
-    // const layerComp = e.currentTarget as Konva.Layer;
-    // const target = e.target as Konva.Group;
-    // const rect = (target.children[0] as Konva.Rect).getClientRect()
-    // push out of bounds
     if (currentTarget.current) {
-      // const barrier = currentTarget.current.getClientRect()
-      // const xoffset = barrier.x < rect.x ? barrier.x - rect.width : barrier.x + barrier.width
-      // const yoffset = barrier.y < rect.y ? barrier.y - rect.height : barrier.y + barrier.height
-      // target.setPosition({x: 0, y: 0})
       deactivate(currentTarget.current);
     }
+    currentTarget.current = null;
+    inRange.current = [];
   };
 
   return (
