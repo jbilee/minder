@@ -7,7 +7,7 @@ const Canvas = dynamic(() => import("@/components/map/Canvas"), {
 
 export default function MapView() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center">
+    <div className="flex flex-col min-h-dvh justify-center items-center">
       <Canvas />
       <ControlPanel />
     </div>

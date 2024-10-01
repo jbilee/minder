@@ -3,10 +3,10 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
 type NewBubbleFormProps = {
-  addBubble: (text: string) => void;
+  createBubble: (text: string) => void;
 };
 
-export default function NewBubbleForm({ addBubble }: NewBubbleFormProps) {
+export default function NewBubbleForm({ createBubble }: NewBubbleFormProps) {
   const [input, setInput] = useState("");
 
   const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
@@ -18,7 +18,7 @@ export default function NewBubbleForm({ addBubble }: NewBubbleFormProps) {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (input === "") return;
-    addBubble(input);
+    createBubble(input);
     setInput("");
   };
 
