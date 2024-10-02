@@ -5,6 +5,7 @@ import { Layer, Stage } from "react-konva";
 import Konva from "konva";
 import Bubble from "./Bubble";
 import NewBubbleForm from "./NewBubbleForm";
+import { getRandomValue } from "@/utils/calculations";
 import type { KonvaEventObject } from "konva/lib/Node";
 
 type BubbleProps = {
@@ -12,6 +13,8 @@ type BubbleProps = {
   id: string;
   x: number;
   y: number;
+  parentNode: string | null;
+  childNodes: string[];
 };
 
 type RectConfig = {
@@ -19,10 +22,6 @@ type RectConfig = {
   y: number;
   width: number;
   height: number;
-};
-
-const getRandomValue = (min: number, max: number) => {
-  return Math.floor(Math.random() * (max + 1 - min) + min);
 };
 
 const haveIntersection = (r1: RectConfig, r2: RectConfig) => {
@@ -47,6 +46,14 @@ const getCoverage = (r1: RectConfig, r2: RectConfig) => {
   return xDifference * yDifference;
 };
 
+const getClosestCorner = (target: RectConfig, dragged: RectConfig) => {
+  const xAxis = target.x - dragged.x;
+  const yAxis = target.y - dragged.y;
+  const xCorner = xAxis <= 0 ? 1 : 0;
+  const yCorner = yAxis <= 0 ? 1 : 0;
+  return { x: xCorner, y: yCorner };
+};
+
 const findClosest = (array: Konva.Group[], target: RectConfig) => {
   const closest = array.reduce((max, cur) => {
     const maxCoverage = max ? getCoverage(max.getClientRect(), target) : 0;
@@ -54,6 +61,36 @@ const findClosest = (array: Konva.Group[], target: RectConfig) => {
     return maxCoverage > curCoverage ? max : cur;
   }, array[0]);
   return closest;
+};
+
+const getObjectsInRange = (array: Konva.Group[], target: RectConfig) => {
+  const inRange = array.reduce<Konva.Group[]>((arr, cur) => {
+    const coverage = getCoverage(cur.getClientRect(), target);
+    if (coverage > 0) arr.push(cur);
+    return arr;
+  }, []);
+  console.log(inRange);
+  return inRange;
+};
+
+const pushObjectAway = (target: Konva.Shape, draggedConfig: RectConfig) => {
+  const targetConfig = target.getClientRect();
+  const ratio = Math.abs(draggedConfig.y - targetConfig.y) / Math.abs(draggedConfig.x - targetConfig.x);
+
+  if (ratio >= 1) {
+    const yMove =
+      draggedConfig.y <= targetConfig.y
+        ? draggedConfig.y + draggedConfig.height - targetConfig.y
+        : -(targetConfig.y + targetConfig.height - draggedConfig.y);
+    target.move({ x: 0, y: yMove });
+    return;
+  }
+
+  const xMove =
+    draggedConfig.x <= targetConfig.x
+      ? draggedConfig.x + draggedConfig.width - targetConfig.x
+      : -(targetConfig.x + targetConfig.width - draggedConfig.x);
+  target.move({ x: xMove, y: 0 });
 };
 
 export default function Canvas() {
@@ -80,6 +117,8 @@ export default function Canvas() {
       id: crypto.randomUUID(),
       x: getRandomValue(0, 900),
       y: getRandomValue(0, 500),
+      parentNode: null,
+      childNodes: [],
     };
     setBubbles((prev) => [...prev, newBubble]);
   };
@@ -126,10 +165,20 @@ export default function Canvas() {
 
   const handleDragEnd = (e: KonvaEventObject<DragEvent>) => {
     if (currentTarget.current) {
+      // const response = confirm("Merge?");
+      // if (response) {
+      //   // save relationship
+      //   // draw line between bubbles
+      // }
+      // push away
+      pushObjectAway(e.target as Konva.Shape, currentTarget.current.getClientRect());
       deactivate(currentTarget.current);
+      currentTarget.current = null;
     }
-    currentTarget.current = null;
-    inRange.current = [];
+    if (inRange.current.length) {
+      // push away objects in range
+      inRange.current = [];
+    }
   };
 
   return (
