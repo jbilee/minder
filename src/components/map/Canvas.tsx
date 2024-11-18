@@ -190,8 +190,13 @@ export default function Canvas() {
       deactivate(collisionTarget.current);
       collisionTarget.current = null;
     }
+
+    // find objects in range
     if (bubblesInRange.current.length) {
       // push away objects in range
+      bubblesInRange.current.forEach((bubble) => {
+        pushObjectAway(dragged, bubble, updatePosition);
+      });
       bubblesInRange.current = [];
     }
 
