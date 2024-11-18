@@ -13,6 +13,7 @@ type BubbleProps = {
   id: string;
   x: number;
   y: number;
+  createdAt: string;
   parentNode: string | null;
   childNodes: string[];
 };
@@ -120,6 +121,7 @@ export default function Canvas() {
       id: crypto.randomUUID(),
       x: getRandomValue(0, 900),
       y: getRandomValue(0, 500),
+      createdAt: new Date().toLocaleString("ko-KR"),
       parentNode: null,
       childNodes: [],
     };
@@ -203,12 +205,24 @@ export default function Canvas() {
     updatePosition(dragged);
   };
 
+  const handleZoom = (e: KonvaEventObject<WheelEvent>) => {
+    const deltaY = e.evt.deltaY;
+    const currentScale = e.currentTarget.scale();
+    if (!currentScale) return;
+    if (deltaY < 0) {
+      e.currentTarget.scale({ x: (currentScale.x += 0.1), y: (currentScale.y += 0.1) });
+    }
+    if (deltaY > 0) {
+      e.currentTarget.scale({ x: (currentScale.x -= 0.1), y: (currentScale.y -= 0.1) });
+    }
+  };
+
   return (
     <>
-      <Stage width={canvasSize.x} height={canvasSize.y} draggable>
+      <Stage width={canvasSize.x} height={canvasSize.y} onWheel={handleZoom} draggable>
         <Layer onDragMove={handleDragMove} onDragEnd={handleDragEnd} ref={layerRef}>
           {bubbles.map((elem) => (
-            <Bubble key={elem.id} id={elem.id} text={elem.text} x={elem.x} y={elem.y} />
+            <Bubble key={elem.id} id={elem.id} text={elem.text} x={elem.x} y={elem.y} createdAt={elem.createdAt} />
           ))}
         </Layer>
       </Stage>
