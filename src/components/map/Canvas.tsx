@@ -73,24 +73,16 @@ const getObjectsInRange = (array: Konva.Group[], target: RectConfig) => {
   return inRange;
 };
 
-const pushObjectAway = (target: Konva.Shape, draggedConfig: RectConfig) => {
+const pushObjectAway = (target: Konva.Shape, draggedTarget: Konva.Group, callback?: (t: Konva.Shape) => void) => {
   const targetConfig = target.getClientRect();
-  const ratio = Math.abs(draggedConfig.y - targetConfig.y) / Math.abs(draggedConfig.x - targetConfig.x);
+  const draggedConfig = draggedTarget.getClientRect();
 
-  if (ratio >= 1) {
-    const yMove =
-      draggedConfig.y <= targetConfig.y
-        ? draggedConfig.y + draggedConfig.height - targetConfig.y
-        : -(targetConfig.y + targetConfig.height - draggedConfig.y);
-    target.move({ x: 0, y: yMove });
-    return;
-  }
+  const yMove =
+    targetConfig.y <= draggedConfig.y
+      ? targetConfig.y + targetConfig.height - draggedConfig.y
+      : -(draggedConfig.y + draggedConfig.height - targetConfig.y);
 
-  const xMove =
-    draggedConfig.x <= targetConfig.x
-      ? draggedConfig.x + draggedConfig.width - targetConfig.x
-      : -(targetConfig.x + targetConfig.width - draggedConfig.x);
-  target.move({ x: xMove, y: 0 });
+  draggedTarget.move({ x: 0, y: yMove });
 };
 
 export default function Canvas() {
@@ -171,7 +163,7 @@ export default function Canvas() {
       //   // draw line between bubbles
       // }
       // push away
-      pushObjectAway(e.target as Konva.Shape, currentTarget.current.getClientRect());
+      pushObjectAway(e.target as Konva.Shape, currentTarget.current);
       deactivate(currentTarget.current);
       currentTarget.current = null;
     }
