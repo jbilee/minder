@@ -97,8 +97,8 @@ const pushObjectAway = (dragTarget: Konva.Group, dropTarget: Konva.Group, callba
 
 export default function Canvas() {
   const layerRef = useRef<null | Konva.Layer>(null);
-  const currentTarget = useRef<null | Konva.Group>(null);
-  const inRange = useRef<Konva.Group[]>([]);
+  const collisionTarget = useRef<null | Konva.Group>(null);
+  const bubblesInRange = useRef<Konva.Group[]>([]);
   const [canvasSize, setCanvasSize] = useState({
     x: window.innerWidth,
     y: window.innerHeight,
@@ -150,27 +150,27 @@ export default function Canvas() {
             (target.children[0] as Konva.Rect).getClientRect()
           )
         ) {
-          if (!inRange.current.includes(group)) {
-            inRange.current.push(group);
+          if (!bubblesInRange.current.includes(group)) {
+            bubblesInRange.current.push(group);
           }
-          if (inRange.current.length === 1) {
-            currentTarget.current = group;
+          if (bubblesInRange.current.length === 1) {
+            collisionTarget.current = group;
             activate(group);
           }
-          if (inRange.current.length > 1) {
-            const closest = findClosest(inRange.current, target.getClientRect());
-            inRange.current.forEach((comp) => {
+          if (bubblesInRange.current.length > 1) {
+            const closest = findClosest(bubblesInRange.current, target.getClientRect());
+            bubblesInRange.current.forEach((comp) => {
               if (comp !== closest) deactivate(comp);
             });
             activate(closest);
-            currentTarget.current = closest;
+            collisionTarget.current = closest;
           }
         } else {
-          if (inRange.current.includes(group)) {
-            inRange.current = inRange.current.filter((comp) => comp !== group);
+          if (bubblesInRange.current.includes(group)) {
+            bubblesInRange.current = bubblesInRange.current.filter((comp) => comp !== group);
             deactivate(group);
           }
-          if (currentTarget.current === group) currentTarget.current = null;
+          if (collisionTarget.current === group) collisionTarget.current = null;
         }
       }
     });
@@ -179,20 +179,20 @@ export default function Canvas() {
   const handleDragEnd = (e: KonvaEventObject<DragEvent>) => {
     const dragged = e.target as Konva.Group;
 
-    if (currentTarget.current) {
+    if (collisionTarget.current) {
       // const response = confirm("Merge?");
       // if (response) {
       //   // save relationship
       //   // draw line between bubbles
       // }
       // push away
-      pushObjectAway(dragged, currentTarget.current, updatePosition);
-      deactivate(currentTarget.current);
-      currentTarget.current = null;
+      pushObjectAway(dragged, collisionTarget.current, updatePosition);
+      deactivate(collisionTarget.current);
+      collisionTarget.current = null;
     }
-    if (inRange.current.length) {
+    if (bubblesInRange.current.length) {
       // push away objects in range
-      inRange.current = [];
+      bubblesInRange.current = [];
     }
 
     updatePosition(dragged);
