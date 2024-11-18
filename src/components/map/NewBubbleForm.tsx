@@ -11,7 +11,7 @@ export default function NewBubbleForm({ createBubble }: NewBubbleFormProps) {
 
   const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
-    if (input.length > 30) return;
+    if (input.length > 130) return;
     setInput(input);
   };
 

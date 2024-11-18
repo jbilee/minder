@@ -30,15 +30,15 @@ const haveIntersection = (r1: RectDimensions, r2: RectDimensions) => {
 };
 
 const activate = (target: Konva.Group) => {
-  const rect = target.children[0] as Konva.Rect;
-  rect.fill("yellow");
-  rect.stroke("black");
+  const rect = target.children[5] as Konva.Rect;
+  rect.fill("#cbdcf4");
+  rect.opacity(0.5);
 };
 
 const deactivate = (target: Konva.Group) => {
-  const rect = target.children[0] as Konva.Rect;
-  rect.fill("blue");
-  rect.stroke("");
+  const rect = target.children[5] as Konva.Rect;
+  rect.fill("");
+  rect.opacity(1);
 };
 
 const getCoverage = (r1: RectDimensions, r2: RectDimensions) => {
