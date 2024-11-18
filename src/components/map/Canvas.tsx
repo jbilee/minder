@@ -73,7 +73,7 @@ const getObjectsInRange = (array: Konva.Group[], target: RectDimensions) => {
   return inRange;
 };
 
-const pushObjectAway = (dragTarget: Konva.Shape, dropTarget: Konva.Group) => {
+const pushObjectAway = (dragTarget: Konva.Group, dropTarget: Konva.Group, callback: (t: Konva.Group) => void) => {
   const dragTargetDims = dragTarget.getClientRect();
   const dropTargetDims = dropTarget.getClientRect();
   const xDiff = Math.abs(dragTargetDims.x - dropTargetDims.x);
@@ -81,17 +81,22 @@ const pushObjectAway = (dragTarget: Konva.Shape, dropTarget: Konva.Group) => {
 
   if (moveX) {
     if (dragTargetDims.x <= dropTargetDims.x) {
-      return dropTarget.move({ x: dragTargetDims.x + dragTargetDims.width - dropTargetDims.x, y: 0 });
+      dropTarget.move({ x: dragTargetDims.x + dragTargetDims.width - dropTargetDims.x, y: 0 });
+      return callback(dropTarget);
     }
-    return dropTarget.move({ x: -(dropTargetDims.x + dropTargetDims.width - dragTargetDims.x), y: 0 });
+    dropTarget.move({ x: -(dropTargetDims.x + dropTargetDims.width - dragTargetDims.x), y: 0 });
+    return callback(dropTarget);
   }
   if (dragTargetDims.y <= dropTargetDims.y) {
-    return dropTarget.move({ x: 0, y: dragTargetDims.y + dragTargetDims.height - dropTargetDims.y });
+    dropTarget.move({ x: 0, y: dragTargetDims.y + dragTargetDims.height - dropTargetDims.y });
+    return callback(dropTarget);
   }
   dropTarget.move({ x: 0, y: -(dropTargetDims.y + dropTargetDims.height - dragTargetDims.y) });
+  callback(dropTarget);
 };
 
 export default function Canvas() {
+  const layerRef = useRef<null | Konva.Layer>(null);
   const currentTarget = useRef<null | Konva.Group>(null);
   const inRange = useRef<Konva.Group[]>([]);
   const [canvasSize, setCanvasSize] = useState({
@@ -119,6 +124,16 @@ export default function Canvas() {
       childNodes: [],
     };
     setBubbles((prev) => [...prev, newBubble]);
+  };
+
+  const updatePosition = (target: Konva.Shape | Konva.Group | Konva.Rect) => {
+    const newPos = target.getAbsolutePosition(layerRef.current as Konva.Layer);
+    const id = target.getAttrs().id;
+    setBubbles((prev: BubbleProps[]) => {
+      const newArr = prev.filter((bubble) => bubble.id !== id);
+      const [targetBubble] = prev.filter((bubble) => bubble.id === id);
+      return [...newArr, { ...targetBubble, x: newPos.x, y: newPos.y }];
+    });
   };
 
   const handleDragMove = (e: KonvaEventObject<DragEvent>) => {
@@ -162,6 +177,8 @@ export default function Canvas() {
   };
 
   const handleDragEnd = (e: KonvaEventObject<DragEvent>) => {
+    const dragged = e.target as Konva.Group;
+
     if (currentTarget.current) {
       // const response = confirm("Merge?");
       // if (response) {
@@ -169,7 +186,7 @@ export default function Canvas() {
       //   // draw line between bubbles
       // }
       // push away
-      pushObjectAway(e.target as Konva.Shape, currentTarget.current);
+      pushObjectAway(dragged, currentTarget.current, updatePosition);
       deactivate(currentTarget.current);
       currentTarget.current = null;
     }
@@ -177,14 +194,16 @@ export default function Canvas() {
       // push away objects in range
       inRange.current = [];
     }
+
+    updatePosition(dragged);
   };
 
   return (
     <>
       <Stage width={canvasSize.x} height={canvasSize.y} draggable>
-        <Layer onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
+        <Layer onDragMove={handleDragMove} onDragEnd={handleDragEnd} ref={layerRef}>
           {bubbles.map((elem) => (
-            <Bubble key={elem.id} text={elem.text} x={elem.x} y={elem.y} />
+            <Bubble key={elem.id} id={elem.id} text={elem.text} x={elem.x} y={elem.y} />
           ))}
         </Layer>
       </Stage>
