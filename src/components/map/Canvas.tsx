@@ -97,6 +97,7 @@ const pushObjectAway = (dragTarget: Konva.Group, dropTarget: Konva.Group, callba
 };
 
 export default function Canvas() {
+  const stageRef = useRef<null | Konva.Stage>(null);
   const layerRef = useRef<null | Konva.Layer>(null);
   const collisionTarget = useRef<null | Konva.Group>(null);
   const bubblesInRange = useRef<Konva.Group[]>([]);
@@ -128,6 +129,19 @@ export default function Canvas() {
     setBubbles((prev) => [...prev, newBubble]);
   };
 
+  const changeCursor = (status: string) => {
+    if (!stageRef.current) return;
+    if (status === "enter" || status === "release") {
+      stageRef.current.container().style.cursor = "grab";
+    }
+    if (status === "leave") {
+      stageRef.current.container().style.cursor = "default";
+    }
+    if (status === "grab") {
+      stageRef.current.container().style.cursor = "grabbing";
+    }
+  };
+
   const updatePosition = (target: Konva.Shape | Konva.Group | Konva.Rect) => {
     const newPos = target.getAbsolutePosition(layerRef.current as Konva.Layer);
     const id = target.getAttrs().id;
@@ -136,6 +150,14 @@ export default function Canvas() {
       const [targetBubble] = prev.filter((bubble) => bubble.id === id);
       return [...newArr, { ...targetBubble, x: newPos.x, y: newPos.y }];
     });
+  };
+
+  const handleMouseDown = () => {
+    changeCursor("grab");
+  };
+
+  const handleMouseUp = () => {
+    changeCursor("release");
   };
 
   const handleDragMove = (e: KonvaEventObject<DragEvent>) => {
@@ -179,6 +201,7 @@ export default function Canvas() {
   };
 
   const handleDragEnd = (e: KonvaEventObject<DragEvent>) => {
+    changeCursor("release");
     const dragged = e.target as Konva.Group;
 
     if (collisionTarget.current) {
@@ -219,10 +242,24 @@ export default function Canvas() {
 
   return (
     <>
-      <Stage width={canvasSize.x} height={canvasSize.y} onWheel={handleZoom} draggable>
-        <Layer onDragMove={handleDragMove} onDragEnd={handleDragEnd} ref={layerRef}>
+      <Stage width={canvasSize.x} height={canvasSize.y} onWheel={handleZoom} ref={stageRef} draggable>
+        <Layer
+          ref={layerRef}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+        >
           {bubbles.map((elem) => (
-            <Bubble key={elem.id} id={elem.id} text={elem.text} x={elem.x} y={elem.y} createdAt={elem.createdAt} />
+            <Bubble
+              key={elem.id}
+              id={elem.id}
+              text={elem.text}
+              x={elem.x}
+              y={elem.y}
+              createdAt={elem.createdAt}
+              handleCursor={changeCursor}
+            />
           ))}
         </Layer>
       </Stage>

@@ -7,17 +7,20 @@ type BubbleProps = {
   x: number;
   y: number;
   createdAt: string;
+  handleCursor: (status: string) => void;
 };
 
-export default function Bubble({ id, text, x, y, createdAt }: BubbleProps) {
+export default function Bubble({ id, text, x, y, createdAt, handleCursor }: BubbleProps) {
   const [stroke, setStroke] = useState("");
 
   const handleMouseEnter = () => {
     setStroke("#007ecc");
+    handleCursor("enter");
   };
 
   const handleMouseLeave = () => {
     setStroke("");
+    handleCursor("leave");
   };
 
   return (
@@ -35,7 +38,16 @@ export default function Bubble({ id, text, x, y, createdAt }: BubbleProps) {
       {/* <Rect cornerRadius={10} x={-3} y={-3} width={266} height={106} onClick={test} name="barrier" /> */}
       <Circle x={20} y={110} radius={8} stroke="white" />
       <Line points={[20, 106, 20, 110, 24, 112]} strokeWidth={2} lineCap="round" stroke="white" />
-      <Text text={text} width={260} height={100} padding={10} fontSize={16} align="center" fill="white" />
+      <Text
+        text={text}
+        width={260}
+        height={100}
+        padding={10}
+        fontSize={16}
+        align="center"
+        verticalAlign="middle"
+        fill="white"
+      />
       <Text text={createdAt} x={35} y={105} fill="white" />
       <Rect
         cornerRadius={16}
