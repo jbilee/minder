@@ -5,10 +5,11 @@ import { Layer, Stage } from "react-konva";
 import Konva from "konva";
 import Bubble from "./Bubble";
 import NewBubbleForm from "./NewBubbleForm";
+import { getCurrentTime } from "@/utils/time";
 import { getRandomValue } from "@/utils/calculations";
 import type { KonvaEventObject } from "konva/lib/Node";
 
-type BubbleProps = {
+export type BubbleProps = {
   text: string;
   id: string;
   x: number;
@@ -16,6 +17,17 @@ type BubbleProps = {
   createdAt: string;
   parentNode: string | null;
   childNodes: string[];
+};
+
+type EdgeProps = {
+  id: string;
+  from: string;
+  to: string;
+};
+
+type Coords = {
+  x: number;
+  y: number;
 };
 
 type RectDimensions = {
@@ -96,6 +108,24 @@ const pushObjectAway = (dragTarget: Konva.Group, dropTarget: Konva.Group, callba
   callback(dropTarget);
 };
 
+const saveToStorage = (data: any) => {
+  localStorage.setItem("minder-test", JSON.stringify(data));
+};
+
+const initEdges = (bubbles: BubbleProps[]) => {
+  const edges: EdgeProps[] = [];
+  if (!bubbles.length) return edges;
+
+  bubbles.forEach((bubble) => {
+    if (bubble.parentNode) {
+      const newEdge = { id: crypto.randomUUID(), from: bubble.id, to: bubble.parentNode };
+      edges.push(newEdge);
+    }
+  });
+
+  return edges;
+};
+
 export default function Canvas() {
   const stageRef = useRef<null | Konva.Stage>(null);
   const layerRef = useRef<null | Konva.Layer>(null);
@@ -106,15 +136,29 @@ export default function Canvas() {
     y: window.innerHeight,
   });
   const [bubbles, setBubbles] = useState<BubbleProps[]>([]);
+  const [edges, setEdges] = useState<EdgeProps[]>([]);
 
   useEffect(() => {
     const handleResize = () => {
       setCanvasSize({ x: window.innerWidth, y: window.innerHeight });
     };
+
+    const storageData = localStorage.getItem("minder-test");
+    if (storageData) {
+      const data = JSON.parse(storageData);
+      const initialEdges = initEdges(data);
+      setBubbles(data);
+      setEdges(initialEdges);
+    }
+
     window.addEventListener("resize", handleResize);
     Konva.hitOnDragEnabled = true; // For pinch zoom on touch devices -- remove if there's conflict with other pieces of code
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    saveToStorage(bubbles);
+  }, [bubbles]);
 
   const createBubble = (text: string) => {
     const newBubble = {
@@ -122,11 +166,34 @@ export default function Canvas() {
       id: crypto.randomUUID(),
       x: getRandomValue(0, 900),
       y: getRandomValue(0, 500),
-      createdAt: new Date().toLocaleString("ko-KR"),
+      createdAt: getCurrentTime(),
       parentNode: null,
       childNodes: [],
     };
     setBubbles((prev) => [...prev, newBubble]);
+  };
+
+  const addChildNode = (parentId: string, childId: string) => {
+    const newBubbles = [...bubbles];
+    const [parent] = newBubbles.filter((bubble) => bubble.id === parentId);
+    const [child] = newBubbles.filter((bubble) => bubble.id === childId);
+
+    // Remove childId from previous parent
+    if (child.parentNode) {
+      const [prevParent] = newBubbles.filter((bubble) => bubble.id === child.parentNode);
+      prevParent.childNodes = prevParent.childNodes.filter((id) => id !== childId);
+    }
+
+    // If the child is now the parent, reverse the relationship
+    if (parent.parentNode === childId) {
+      parent.parentNode = null;
+      child.childNodes = child.childNodes.filter((id) => id !== parentId);
+    }
+
+    child.parentNode = parent.id;
+    parent.childNodes.push(child.id);
+
+    setBubbles(newBubbles);
   };
 
   const changeCursor = (status: string) => {
@@ -203,17 +270,19 @@ export default function Canvas() {
   const handleDragEnd = (e: KonvaEventObject<DragEvent>) => {
     changeCursor("release");
     const dragged = e.target as Konva.Group;
+    let response = false;
 
     if (collisionTarget.current) {
-      // const response = confirm("Merge?");
-      // if (response) {
-      //   // save relationship
-      //   // draw line between bubbles
-      // }
+      const collisionTargetId = collisionTarget.current.getAttrs().id;
+      const draggedId = dragged.getAttrs().id;
+      const [draggedBubble] = bubbles.filter((bubble) => bubble.id === draggedId);
+      if (draggedBubble.parentNode !== collisionTargetId) {
+        response = true;
+        // TODO: display toast regarding the merge
+      }
       // push away
       pushObjectAway(dragged, collisionTarget.current, updatePosition);
       deactivate(collisionTarget.current);
-      collisionTarget.current = null;
     }
 
     // find objects in range
@@ -226,6 +295,20 @@ export default function Canvas() {
     }
 
     updatePosition(dragged);
+
+    if (collisionTarget.current && response) {
+      // save relationship
+      const parentId = collisionTarget.current.getAttrs().id;
+      const childId = dragged.getAttrs().id;
+      if (!parentId || !childId) {
+        // handle exception
+        return;
+      }
+      addChildNode(parentId, childId);
+
+      // TODO: draw line between bubbles
+      collisionTarget.current = null;
+    }
   };
 
   const handleZoom = (e: KonvaEventObject<WheelEvent>) => {
