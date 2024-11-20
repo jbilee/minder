@@ -126,6 +126,10 @@ const initEdges = (bubbles: BubbleProps[]) => {
   return edges;
 };
 
+const getEdgePoints = (from: Coords, to: Coords) => {
+  return [from.x + 130, from.y + 65, to.x + 130, to.y + 65];
+};
+
 export default function Canvas() {
   const stageRef = useRef<null | Konva.Stage>(null);
   const layerRef = useRef<null | Konva.Layer>(null);
@@ -160,6 +164,30 @@ export default function Canvas() {
     saveToStorage(bubbles);
   }, [bubbles]);
 
+  useEffect(() => {
+    if (!edges.length) return;
+
+    edges.forEach((edge, i) => {
+      if (!layerRef.current) return;
+      const line = layerRef.current.findOne("#" + edge.id);
+      if (line) return;
+
+      const fromNode = layerRef.current.findOne("#" + edge.from);
+      const toNode = layerRef.current.findOne("#" + edge.to);
+      const points = getEdgePoints(fromNode!.position(), toNode!.position());
+
+      const newEdge = new Konva.Line({
+        id: edge.id,
+        stroke: "#007ecc",
+        fill: "#007ecc",
+        points,
+      });
+
+      layerRef.current.add(newEdge);
+      newEdge.zIndex(i);
+    });
+  }, [edges]);
+
   const createBubble = (text: string) => {
     const newBubble = {
       text,
@@ -173,6 +201,24 @@ export default function Canvas() {
     setBubbles((prev) => [...prev, newBubble]);
   };
 
+  const eraseEdge = (fromId: string, toId: string) => {
+    if (!layerRef.current) return;
+    const [edge] = edges.filter(({ from, to }) => from === fromId && to === toId);
+    if (!edge) return;
+    const edgeNode = layerRef.current.findOne("#" + edge.id);
+    if (!edgeNode) return;
+    edgeNode.destroy();
+  };
+
+  const removeEdge = (fromId: string, toId: string) => {
+    const [edge] = edges.filter(({ from, to }) => from === fromId && to === toId);
+    if (!edge) return;
+    setEdges((prev) => {
+      const newEdges = prev.filter(({ id }) => id !== edge.id);
+      return newEdges;
+    });
+  };
+
   const addChildNode = (parentId: string, childId: string) => {
     const newBubbles = [...bubbles];
     const [parent] = newBubbles.filter((bubble) => bubble.id === parentId);
@@ -180,12 +226,17 @@ export default function Canvas() {
 
     // Remove childId from previous parent
     if (child.parentNode) {
+      eraseEdge(childId, child.parentNode);
+      removeEdge(childId, child.parentNode);
       const [prevParent] = newBubbles.filter((bubble) => bubble.id === child.parentNode);
       prevParent.childNodes = prevParent.childNodes.filter((id) => id !== childId);
+      // need to also physically erase edge from canvas- create new function eraseEdge()
     }
 
     // If the child is now the parent, reverse the relationship
     if (parent.parentNode === childId) {
+      eraseEdge(parentId, childId);
+      removeEdge(parentId, childId);
       parent.parentNode = null;
       child.childNodes = child.childNodes.filter((id) => id !== parentId);
     }
@@ -194,6 +245,15 @@ export default function Canvas() {
     parent.childNodes.push(child.id);
 
     setBubbles(newBubbles);
+  };
+
+  const addEdge = (fromNode: Konva.Group, toNode: Konva.Group) => {
+    const fromId = fromNode.getAttrs().id;
+    const toId = toNode.getAttrs().id;
+    if (!fromId || !toId) return;
+
+    const newEdge = { id: crypto.randomUUID(), from: fromId, to: toId };
+    setEdges((prev) => [...prev, newEdge]);
   };
 
   const changeCursor = (status: string) => {
@@ -230,7 +290,19 @@ export default function Canvas() {
   const handleDragMove = (e: KonvaEventObject<DragEvent>) => {
     const layerComp = e.currentTarget as Konva.Layer;
     const target = e.target as Konva.Group;
-    target.setZIndex(bubbles.length - 1);
+    target.setZIndex(bubbles.length + edges.length - 1);
+
+    if (edges.length) {
+      edges.forEach((edge) => {
+        const line = layerRef.current!.findOne("#" + edge.id);
+        if (!line) return;
+        const fromNode = layerRef.current!.findOne("#" + edge.from);
+        const toNode = layerRef.current!.findOne("#" + edge.to);
+
+        const points = getEdgePoints(fromNode!.position(), toNode!.position());
+        (line as any).points(points);
+      });
+    }
 
     layerComp.children.forEach((group) => {
       if (group === target) return;
@@ -305,6 +377,7 @@ export default function Canvas() {
         return;
       }
       addChildNode(parentId, childId);
+      addEdge(dragged, collisionTarget.current);
 
       // TODO: draw line between bubbles
       collisionTarget.current = null;
