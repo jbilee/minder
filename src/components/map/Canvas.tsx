@@ -6,7 +6,7 @@ import Konva from "konva";
 import Bubble from "./Bubble";
 import NewBubbleForm from "./NewBubbleForm";
 import { getCurrentTime } from "@/utils/time";
-import { getRandomValue } from "@/utils/calculations";
+import { getRandomValue } from "@/utils/math";
 import type { KonvaEventObject } from "konva/lib/Node";
 
 export type BubbleProps = {
