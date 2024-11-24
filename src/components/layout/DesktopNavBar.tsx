@@ -4,8 +4,9 @@ import { auth } from "@clerk/nextjs/server";
 export default async function DesktopNavBar() {
   const { userId } = await auth();
   return (
-    <div className="w-full p-4 bg-white border-b border-neutral-400">
+    <div className="w-full p-5 sticky top-0 bg-white border-b border-neutral-400">
       <div className="flex gap-4">
+        <Link href="/">Home</Link>
         {userId ? (
           <>
             <li className="ml-auto">
