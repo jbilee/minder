@@ -2,9 +2,9 @@ import DesktopNavBar from "@/components/layout/DesktopNavBar";
 
 export default function HomeLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className="relative">
+    <main className="relative">
       <DesktopNavBar />
-      {children}
-    </div>
+      <div className="grid place-content-center py-10">{children}</div>
+    </main>
   );
 }
