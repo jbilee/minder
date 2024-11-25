@@ -5,7 +5,7 @@ export const extractDate = (datetime: string) => {
 
 export const extractTime = (datetime: string) => {
   const [, time] = datetime.split("T");
-  return time.substring(0, 8);
+  return time.substring(0, 5);
 };
 
 export const getCurrentTime = () => {

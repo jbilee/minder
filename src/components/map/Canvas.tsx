@@ -5,12 +5,22 @@ import { Layer, Stage } from "react-konva";
 import Konva from "konva";
 import Bubble from "./Bubble";
 import NewBubbleForm from "./NewBubbleForm";
-import { getCurrentTime } from "@/utils/time";
+import { postBubble } from "@/app/actions";
 import { getRandomValue } from "@/utils/math";
 import type { KonvaEventObject } from "konva/lib/Node";
 
 type CanvasProps = {
   data: BubbleProps[];
+  mapId: string;
+};
+
+export type BubbleData = {
+  text: string;
+  x: number;
+  y: number;
+  parent_node: string | null;
+  child_nodes: string[];
+  map_id: string;
 };
 
 export type BubbleProps = {
@@ -112,10 +122,6 @@ const pushObjectAway = (dragTarget: Konva.Group, dropTarget: Konva.Group, callba
   callback(dropTarget);
 };
 
-const saveToStorage = (data: any) => {
-  localStorage.setItem("minder-test", JSON.stringify(data));
-};
-
 const initEdges = (bubbles: BubbleProps[]) => {
   const edges: EdgeProps[] = [];
   if (!bubbles.length) return edges;
@@ -134,7 +140,7 @@ const getEdgePoints = (from: Coords, to: Coords) => {
   return [from.x + 130, from.y + 65, to.x + 130, to.y + 65];
 };
 
-export default function Canvas({ data }: CanvasProps) {
+export default function Canvas({ data, mapId }: CanvasProps) {
   const stageRef = useRef<null | Konva.Stage>(null);
   const layerRef = useRef<null | Konva.Layer>(null);
   const collisionTarget = useRef<null | Konva.Group>(null);
@@ -151,25 +157,15 @@ export default function Canvas({ data }: CanvasProps) {
       setCanvasSize({ x: window.innerWidth, y: window.innerHeight });
     };
 
-    // const storageData = localStorage.getItem("minder-test");
-    // if (storageData) {
-    //   const data = JSON.parse(storageData);
-    //   const initialEdges = initEdges(data);
-    //   setBubbles(data);
-    //   setEdges(initialEdges);
-    // }
-
     const initialEdges = initEdges(data);
     setEdges(initialEdges);
 
     window.addEventListener("resize", handleResize);
     Konva.hitOnDragEnabled = true; // For pinch zoom on touch devices -- remove if there's conflict with other pieces of code
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
-  // useEffect(() => {
-  //   saveToStorage(bubbles);
-  // }, [bubbles]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!edges.length) return;
@@ -195,17 +191,19 @@ export default function Canvas({ data }: CanvasProps) {
     });
   }, [edges]);
 
-  const createBubble = (text: string) => {
+  const createBubble = async (text: string) => {
     const newBubble = {
       text,
-      id: crypto.randomUUID(),
       x: getRandomValue(0, 900),
       y: getRandomValue(0, 500),
-      created_at: getCurrentTime(),
       parent_node: null,
       child_nodes: [],
+      map_id: mapId,
     };
-    setBubbles((prev) => [...prev, newBubble]);
+    const result = await postBubble(newBubble);
+    if (result) {
+      setBubbles((prev) => [...prev, result]);
+    }
   };
 
   const eraseEdge = (fromId: string, toId: string) => {

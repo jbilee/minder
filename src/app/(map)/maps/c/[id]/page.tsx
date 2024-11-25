@@ -13,7 +13,7 @@ export default async function MapView({ params }: { params: { id: string } }) {
   }
   return (
     <div className="flex flex-col min-h-dvh justify-center items-center">
-      <Canvas data={data ?? []} />
+      <Canvas data={data ?? []} mapId={params.id} />
       {/* <ControlPanel /> */}
     </div>
   );
