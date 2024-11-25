@@ -5,7 +5,7 @@ import { Layer, Stage } from "react-konva";
 import Konva from "konva";
 import Bubble from "./Bubble";
 import NewBubbleForm from "./NewBubbleForm";
-import { postBubble, putBubble } from "@/app/actions";
+import { postBubble, putBubbleArray } from "@/app/actions";
 import { getRandomValue } from "@/utils/math";
 import type { KonvaEventObject } from "konva/lib/Node";
 
@@ -249,8 +249,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     parent.child_nodes.push(child.id);
 
     try {
-      await putBubble(child);
-      await putBubble(parent);
+      await putBubbleArray(newBubbles);
       setBubbles(newBubbles);
     } catch (error) {
       // TODO: Notify user
