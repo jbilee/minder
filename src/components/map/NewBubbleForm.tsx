@@ -23,9 +23,14 @@ export default function NewBubbleForm({ createBubble }: NewBubbleFormProps) {
   };
 
   return (
-    <form onSubmit={onSubmit} className="fixed bottom-4 flex gap-2 px-4 py-2 rounded-2xl bg-slate-400">
-      <input type="text" value={input} onChange={handleInput} />
-      <input type="submit" value="Add" />
+    <form className="fixed bottom-4 flex px-4 py-2 gap-2 rounded-xl bg-sky-700" onSubmit={onSubmit}>
+      <input
+        className="bg-transparent border-b border-b-slate-50 text-slate-50"
+        type="text"
+        value={input}
+        onChange={handleInput}
+      />
+      <input className="text-slate-50 cursor-pointer" type="submit" value="Add" />
     </form>
   );
 }
