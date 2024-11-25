@@ -1,5 +1,4 @@
 import dynamic from "next/dynamic";
-import ControlPanel from "@/components/map/ControlPanel";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 const Canvas = dynamic(() => import("@/components/map/Canvas"), {
@@ -15,7 +14,7 @@ export default async function MapView({ params }: { params: { id: string } }) {
   return (
     <div className="flex flex-col min-h-dvh justify-center items-center">
       <Canvas data={data ?? []} />
-      <ControlPanel />
+      {/* <ControlPanel /> */}
     </div>
   );
 }
