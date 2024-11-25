@@ -5,7 +5,7 @@ import { Layer, Stage } from "react-konva";
 import Konva from "konva";
 import Bubble from "./Bubble";
 import NewBubbleForm from "./NewBubbleForm";
-import { postBubble } from "@/app/actions";
+import { postBubble, putBubble } from "@/app/actions";
 import { getRandomValue } from "@/utils/math";
 import type { KonvaEventObject } from "konva/lib/Node";
 
@@ -164,7 +164,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     Konva.hitOnDragEnabled = true; // For pinch zoom on touch devices -- remove if there's conflict with other pieces of code
     return () => window.removeEventListener("resize", handleResize);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -224,7 +224,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     });
   };
 
-  const addChildNode = (parentId: string, childId: string) => {
+  const addChildNode = async (parentId: string, childId: string) => {
     const newBubbles = [...bubbles];
     const [parent] = newBubbles.filter((bubble) => bubble.id === parentId);
     const [child] = newBubbles.filter((bubble) => bubble.id === childId);
@@ -235,7 +235,6 @@ export default function Canvas({ data, mapId }: CanvasProps) {
       removeEdge(childId, child.parent_node);
       const [prevParent] = newBubbles.filter((bubble) => bubble.id === child.parent_node);
       prevParent.child_nodes = prevParent.child_nodes.filter((id) => id !== childId);
-      // need to also physically erase edge from canvas- create new function eraseEdge()
     }
 
     // If the child is now the parent, reverse the relationship
@@ -249,7 +248,14 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     child.parent_node = parent.id;
     parent.child_nodes.push(child.id);
 
-    setBubbles(newBubbles);
+    try {
+      await putBubble(child);
+      await putBubble(parent);
+      setBubbles(newBubbles);
+    } catch (error) {
+      // TODO: Notify user
+      console.log(error);
+    }
   };
 
   const addEdge = (fromNode: Konva.Group, toNode: Konva.Group) => {

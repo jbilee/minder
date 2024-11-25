@@ -12,3 +12,12 @@ export const postBubble = async (bubble: BubbleData): Promise<BubbleProps | null
   }
   return data[0];
 };
+
+export const putBubble = async (bubble: BubbleProps) => {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("bubbles").update(bubble).eq("id", bubble.id);
+  if (error) {
+    // TODO: Log error
+    throw new Error("Failed to update bubble.");
+  }
+};
