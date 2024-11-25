@@ -9,14 +9,18 @@ import { getCurrentTime } from "@/utils/time";
 import { getRandomValue } from "@/utils/math";
 import type { KonvaEventObject } from "konva/lib/Node";
 
+type CanvasProps = {
+  data: BubbleProps[];
+};
+
 export type BubbleProps = {
   text: string;
   id: string;
   x: number;
   y: number;
-  createdAt: string;
-  parentNode: string | null;
-  childNodes: string[];
+  created_at: string;
+  parent_node: string | null;
+  child_nodes: string[];
 };
 
 type EdgeProps = {
@@ -117,8 +121,8 @@ const initEdges = (bubbles: BubbleProps[]) => {
   if (!bubbles.length) return edges;
 
   bubbles.forEach((bubble) => {
-    if (bubble.parentNode) {
-      const newEdge = { id: crypto.randomUUID(), from: bubble.id, to: bubble.parentNode };
+    if (bubble.parent_node) {
+      const newEdge = { id: crypto.randomUUID(), from: bubble.id, to: bubble.parent_node };
       edges.push(newEdge);
     }
   });
@@ -130,7 +134,7 @@ const getEdgePoints = (from: Coords, to: Coords) => {
   return [from.x + 130, from.y + 65, to.x + 130, to.y + 65];
 };
 
-export default function Canvas() {
+export default function Canvas({ data }: CanvasProps) {
   const stageRef = useRef<null | Konva.Stage>(null);
   const layerRef = useRef<null | Konva.Layer>(null);
   const collisionTarget = useRef<null | Konva.Group>(null);
@@ -139,7 +143,7 @@ export default function Canvas() {
     x: window.innerWidth,
     y: window.innerHeight,
   });
-  const [bubbles, setBubbles] = useState<BubbleProps[]>([]);
+  const [bubbles, setBubbles] = useState<BubbleProps[]>(data);
   const [edges, setEdges] = useState<EdgeProps[]>([]);
 
   useEffect(() => {
@@ -147,22 +151,25 @@ export default function Canvas() {
       setCanvasSize({ x: window.innerWidth, y: window.innerHeight });
     };
 
-    const storageData = localStorage.getItem("minder-test");
-    if (storageData) {
-      const data = JSON.parse(storageData);
-      const initialEdges = initEdges(data);
-      setBubbles(data);
-      setEdges(initialEdges);
-    }
+    // const storageData = localStorage.getItem("minder-test");
+    // if (storageData) {
+    //   const data = JSON.parse(storageData);
+    //   const initialEdges = initEdges(data);
+    //   setBubbles(data);
+    //   setEdges(initialEdges);
+    // }
+
+    const initialEdges = initEdges(data);
+    setEdges(initialEdges);
 
     window.addEventListener("resize", handleResize);
     Konva.hitOnDragEnabled = true; // For pinch zoom on touch devices -- remove if there's conflict with other pieces of code
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    saveToStorage(bubbles);
-  }, [bubbles]);
+  // useEffect(() => {
+  //   saveToStorage(bubbles);
+  // }, [bubbles]);
 
   useEffect(() => {
     if (!edges.length) return;
@@ -194,9 +201,9 @@ export default function Canvas() {
       id: crypto.randomUUID(),
       x: getRandomValue(0, 900),
       y: getRandomValue(0, 500),
-      createdAt: getCurrentTime(),
-      parentNode: null,
-      childNodes: [],
+      created_at: getCurrentTime(),
+      parent_node: null,
+      child_nodes: [],
     };
     setBubbles((prev) => [...prev, newBubble]);
   };
@@ -225,24 +232,24 @@ export default function Canvas() {
     const [child] = newBubbles.filter((bubble) => bubble.id === childId);
 
     // Remove childId from previous parent
-    if (child.parentNode) {
-      eraseEdge(childId, child.parentNode);
-      removeEdge(childId, child.parentNode);
-      const [prevParent] = newBubbles.filter((bubble) => bubble.id === child.parentNode);
-      prevParent.childNodes = prevParent.childNodes.filter((id) => id !== childId);
+    if (child.parent_node) {
+      eraseEdge(childId, child.parent_node);
+      removeEdge(childId, child.parent_node);
+      const [prevParent] = newBubbles.filter((bubble) => bubble.id === child.parent_node);
+      prevParent.child_nodes = prevParent.child_nodes.filter((id) => id !== childId);
       // need to also physically erase edge from canvas- create new function eraseEdge()
     }
 
     // If the child is now the parent, reverse the relationship
-    if (parent.parentNode === childId) {
+    if (parent.parent_node === childId) {
       eraseEdge(parentId, childId);
       removeEdge(parentId, childId);
-      parent.parentNode = null;
-      child.childNodes = child.childNodes.filter((id) => id !== parentId);
+      parent.parent_node = null;
+      child.child_nodes = child.child_nodes.filter((id) => id !== parentId);
     }
 
-    child.parentNode = parent.id;
-    parent.childNodes.push(child.id);
+    child.parent_node = parent.id;
+    parent.child_nodes.push(child.id);
 
     setBubbles(newBubbles);
   };
@@ -348,7 +355,7 @@ export default function Canvas() {
       const collisionTargetId = collisionTarget.current.getAttrs().id;
       const draggedId = dragged.getAttrs().id;
       const [draggedBubble] = bubbles.filter((bubble) => bubble.id === draggedId);
-      if (draggedBubble.parentNode !== collisionTargetId) {
+      if (draggedBubble.parent_node !== collisionTargetId) {
         response = true;
         // TODO: display toast regarding the merge
       }
@@ -413,7 +420,7 @@ export default function Canvas() {
               text={elem.text}
               x={elem.x}
               y={elem.y}
-              createdAt={elem.createdAt}
+              createdAt={elem.created_at}
               handleCursor={changeCursor}
             />
           ))}

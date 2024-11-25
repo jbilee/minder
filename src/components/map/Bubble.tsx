@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Circle, Group, Line, Rect, Text } from "react-konva";
+import { extractDate, extractTime } from "@/utils/time";
 
 type BubbleProps = {
   id: string;
@@ -48,7 +49,7 @@ export default function Bubble({ id, text, x, y, createdAt, handleCursor }: Bubb
         verticalAlign="middle"
         fill="white"
       />
-      <Text text={createdAt} x={35} y={105} fill="white" />
+      <Text text={`${extractDate(createdAt)} ${extractTime(createdAt)}`} x={35} y={105} fill="white" />
       <Rect
         cornerRadius={16}
         width={260}
