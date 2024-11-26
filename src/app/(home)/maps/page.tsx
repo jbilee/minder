@@ -8,11 +8,17 @@ export default async function Maps() {
     // TODO: Handle exception
   }
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center">
-      {data?.length &&
-        data.map(({ id, name, created_at, updated_at, thumbnail }) => (
-          <MapCard key={id} mapId={id} mapName={name} imgUrl={thumbnail} lastEdited={updated_at ?? created_at} />
-        ))}
-    </main>
+    <div className="lg:max-w-4xl min-h-[calc(100dvh-145px)] sm:min-h-0 px-4 lg:px-0">
+      <h1 className="mb-2 text-lg font-bold">All maps</h1>
+      <div className="grid lg:w-[56rem] grid-cols-1 sm:grid-cols-2 md:grid-cols-3 place-items-center gap-4 sm:gap-0">
+        {data?.length ? (
+          data.map(({ id, name, created_at, updated_at, thumbnail }) => (
+            <MapCard key={id} mapId={id} mapName={name} imgUrl={thumbnail} lastEdited={updated_at ?? created_at} />
+          ))
+        ) : (
+          <div className="lg:w-[56rem] p-4 text-center">There aren&apos;t any maps yet.</div>
+        )}
+      </div>
+    </div>
   );
 }
