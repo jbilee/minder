@@ -6,7 +6,7 @@ export default async function DesktopNavBar() {
   const { userId } = await auth();
   return (
     <div className="hidden sm:block w-full p-5 sticky top-0 bg-white dark:bg-slate-800 border-b border-neutral-300 dark:border-slate-600">
-      <div className="flex gap-4">
+      <ul className="flex gap-4">
         <Link href="/">Home</Link>
         {userId ? (
           <>
@@ -25,7 +25,7 @@ export default async function DesktopNavBar() {
             <Link href="/signin">Sign in</Link>
           </li>
         )}
-      </div>
+      </ul>
     </div>
   );
 }
