@@ -8,7 +8,7 @@ export default async function MapsPage() {
     // TODO: Handle exception
   }
   return (
-    <div className="lg:max-w-4xl min-h-[calc(100dvh-145px)] sm:min-h-0 px-4 lg:px-0">
+    <div className="lg:max-w-4xl px-4 lg:px-0">
       <h1 className="mb-2 text-lg font-bold">All maps</h1>
       <div className="grid lg:w-[56rem] grid-cols-1 sm:grid-cols-2 md:grid-cols-3 place-items-center gap-4 sm:gap-0">
         {data?.length ? (

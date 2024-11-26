@@ -29,12 +29,12 @@ export default async function MobileNavBar() {
       </ul>
     </div>
   ) : (
-    <div className="fixed bottom-6 flex justify-center w-full">
+    <div className="sm:hidden fixed bottom-6 flex justify-center w-full">
       <Link
         href="/signin"
         className="px-7 py-3 rounded-full text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
       >
-        Sign in
+        Get started
       </Link>
     </div>
   );
