@@ -32,6 +32,6 @@ export default async function RecentBubbles() {
       ))}
     </div>
   ) : (
-    <div className="lg:w-[56rem] p-4 text-center">There aren&apos;t any thoughts yet.</div>
+    <div className="lg:w-[56rem] p-4 text-center">You don&apos;t have any thoughts yet.</div>
   );
 }
