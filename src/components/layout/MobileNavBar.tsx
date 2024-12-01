@@ -1,11 +1,16 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { RiHome5Line, RiMindMap, RiSettings3Line } from "react-icons/ri";
 import SignOutIcon from "@/components/SignOutIcon";
 
 export default async function MobileNavBar() {
-  const { userId } = await auth();
-  return userId ? (
+  let user = null;
+  try {
+    user = await currentUser();
+  } catch (e) {
+    // Log
+  }
+  return user ? (
     <div className="sm:hidden fixed bottom-0 w-full p-4 rounded-t-2xl shadow-lg bg-white dark:bg-slate-800">
       <ul className="flex justify-center gap-8">
         <li>

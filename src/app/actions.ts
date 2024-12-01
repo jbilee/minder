@@ -1,5 +1,6 @@
 "use server";
 
+import { clerkClient } from "@clerk/nextjs/server";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 import type { BubbleData, BubbleProps } from "@/components/map/Canvas";
 
@@ -29,4 +30,9 @@ export const putBubbleArray = async (bubbles: BubbleProps[]) => {
     // TODO: Log error
     throw new Error("Failed to update bubbles.");
   }
+};
+
+export const deleteAccount = async (userId: string) => {
+  const clerk = await clerkClient();
+  await clerk.users.deleteUser(userId);
 };
