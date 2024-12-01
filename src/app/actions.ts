@@ -32,6 +32,16 @@ export const putBubbleArray = async (bubbles: BubbleProps[]) => {
   }
 };
 
+export const postMap = async (name: string): Promise<string | null> => {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("maps").insert({ name }).select("id");
+  if (error) {
+    // TODO: Handle error
+    return null;
+  }
+  return data[0].id;
+};
+
 export const deleteAccount = async (userId: string) => {
   const clerk = await clerkClient();
   await clerk.users.deleteUser(userId);
