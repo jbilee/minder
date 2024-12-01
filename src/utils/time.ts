@@ -17,3 +17,8 @@ export const getCurrentTime = () => {
   const minutes = now.getMinutes();
   return `${year}-${month.padStart(2, "0")}-${date} ${hours}:${minutes}`;
 };
+
+export const getDateFromMS = (ms: number) => {
+  const date = new Date(ms);
+  return `${date.getUTCFullYear()}-${date.getUTCMonth() + 1}-${date.getUTCDate()}`;
+};
