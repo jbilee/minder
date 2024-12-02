@@ -487,7 +487,10 @@ export default function Canvas({ data, mapId }: CanvasProps) {
         </Layer>
       </Stage>
       <div ref={contextRef} className="hidden absolute">
-        <button className="px-6 py-2 rounded-md shadow-md bg-white hover:bg-neutral-200" onClick={removeBubble}>
+        <button
+          className="px-6 py-2 rounded-md shadow-md bg-white hover:bg-neutral-200 dark:text-slate-600"
+          onClick={removeBubble}
+        >
           Delete
         </button>
       </div>
