@@ -12,7 +12,7 @@ export default async function MapView({ params }: { params: { id: string } }) {
     // TODO: Handle error
   }
   return (
-    <div className="flex flex-col min-h-dvh justify-center items-center overscroll-none">
+    <div className="flex flex-col min-h-dvh justify-center items-center touch-none">
       <Canvas data={data ?? []} mapId={params.id} />
       {/* <ControlPanel /> */}
     </div>

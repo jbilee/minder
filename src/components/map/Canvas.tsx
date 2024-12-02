@@ -5,7 +5,7 @@ import { Layer, Stage } from "react-konva";
 import Konva from "konva";
 import Bubble from "./Bubble";
 import NewBubbleForm from "./NewBubbleForm";
-import { postBubble, putBubbleArray } from "@/app/actions";
+import { deleteBubble, postBubble, putBubbleArray } from "@/app/actions";
 import { getRandomValue } from "@/utils/math";
 import type { KonvaEventObject } from "konva/lib/Node";
 
@@ -145,6 +145,8 @@ export default function Canvas({ data, mapId }: CanvasProps) {
   const layerRef = useRef<null | Konva.Layer>(null);
   const collisionTarget = useRef<null | Konva.Group>(null);
   const bubblesInRange = useRef<Konva.Group[]>([]);
+  const contextRef = useRef<null | HTMLDivElement>(null);
+  const contextTargetId = useRef<string>("");
   const [canvasSize, setCanvasSize] = useState({
     x: window.innerWidth,
     y: window.innerHeight,
@@ -157,12 +159,22 @@ export default function Canvas({ data, mapId }: CanvasProps) {
       setCanvasSize({ x: window.innerWidth, y: window.innerHeight });
     };
 
+    const hideContextMenu = () => {
+      const contextMenu = contextRef.current;
+      if (!contextMenu) return;
+      contextMenu.style.display = "none";
+    };
+
     const initialEdges = initEdges(data);
     setEdges(initialEdges);
 
     window.addEventListener("resize", handleResize);
+    window.addEventListener("click", hideContextMenu);
     Konva.hitOnDragEnabled = true; // For pinch zoom on touch devices -- remove if there's conflict with other pieces of code
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("click", hideContextMenu);
+    };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -257,6 +269,22 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     }
   };
 
+  const removeBubble = async () => {
+    const response = confirm("Delete this bubble?");
+    if (!response) return;
+    try {
+      await deleteBubble(contextTargetId.current);
+      setBubbles((prev) => {
+        const remainingBubbles = prev.filter((bubble) => bubble.id !== contextTargetId.current);
+        return [...remainingBubbles];
+      });
+      contextTargetId.current = "";
+    } catch (error) {
+      // TODO: Notify user
+      console.log(error);
+    }
+  };
+
   const addEdge = (fromNode: Konva.Group, toNode: Konva.Group) => {
     const fromId = fromNode.getAttrs().id;
     const toId = toNode.getAttrs().id;
@@ -298,6 +326,11 @@ export default function Canvas({ data, mapId }: CanvasProps) {
   };
 
   const handleDragMove = (e: KonvaEventObject<DragEvent>) => {
+    const contextMenu = contextRef.current;
+    if (contextMenu) {
+      contextMenu.style.display = "none";
+    }
+
     const layerComp = e.currentTarget as Konva.Layer;
     const target = e.target as Konva.Group;
     target.setZIndex(bubbles.length + edges.length - 1);
@@ -406,9 +439,33 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     }
   };
 
+  const handleContext = (e: KonvaEventObject<PointerEvent>) => {
+    e.evt.preventDefault();
+    if (e.target === stageRef.current || !contextRef.current || !stageRef.current) return;
+    const targetBubble = e.target.parent;
+    const stage = stageRef.current;
+    const contextMenu = contextRef.current;
+    const targetId = targetBubble?.getAttrs().id;
+    if (!targetId) return;
+    contextTargetId.current = targetId;
+    contextMenu.style.display = "block";
+    const containerRect = stage.container().getBoundingClientRect();
+    const pointerPosition = stage.getPointerPosition();
+    if (!pointerPosition) return;
+    contextMenu.style.top = containerRect.top + pointerPosition.y + 4 + "px";
+    contextMenu.style.left = containerRect.left + pointerPosition.x + 4 + "px";
+  };
+
   return (
     <>
-      <Stage width={canvasSize.x} height={canvasSize.y} onWheel={handleZoom} ref={stageRef} draggable>
+      <Stage
+        ref={stageRef}
+        width={canvasSize.x}
+        height={canvasSize.y}
+        onContextMenu={handleContext}
+        onWheel={handleZoom}
+        draggable
+      >
         <Layer
           ref={layerRef}
           onMouseDown={handleMouseDown}
@@ -429,6 +486,11 @@ export default function Canvas({ data, mapId }: CanvasProps) {
           ))}
         </Layer>
       </Stage>
+      <div ref={contextRef} className="hidden absolute">
+        <button className="px-6 py-2 rounded-md shadow-md bg-white hover:bg-neutral-200" onClick={removeBubble}>
+          Delete
+        </button>
+      </div>
       <NewBubbleForm createBubble={createBubble} />
     </>
   );

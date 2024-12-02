@@ -32,6 +32,15 @@ export const putBubbleArray = async (bubbles: BubbleProps[]) => {
   }
 };
 
+export const deleteBubble = async (id: string) => {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("bubbles").delete().eq("id", id);
+  if (error) {
+    // TODO: Log error
+    throw new Error("Failed to delete bubble.");
+  }
+};
+
 export const postMap = async (name: string): Promise<string | null> => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.from("maps").insert({ name }).select("id");
