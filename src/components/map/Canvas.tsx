@@ -6,6 +6,7 @@ import Konva from "konva";
 import Bubble from "./Bubble";
 import NewBubbleForm from "./NewBubbleForm";
 import { deleteBubble, postBubble, putBubbleArray } from "@/app/actions";
+import useDebounce from "@/hooks/use-debounce";
 import { getRandomValue } from "@/utils/math";
 import type { KonvaEventObject } from "konva/lib/Node";
 
@@ -147,12 +148,44 @@ export default function Canvas({ data, mapId }: CanvasProps) {
   const bubblesInRange = useRef<Konva.Group[]>([]);
   const contextRef = useRef<null | HTMLDivElement>(null);
   const contextTargetId = useRef<string>("");
+  const lastBubbles = useRef<BubbleProps[]>([]);
   const [canvasSize, setCanvasSize] = useState({
     x: window.innerWidth,
     y: window.innerHeight,
   });
+  const [isLoading, setIsLoading] = useState(true);
   const [bubbles, setBubbles] = useState<BubbleProps[]>(data);
   const [edges, setEdges] = useState<EdgeProps[]>([]);
+  const debouncedBubbles = useDebounce(bubbles, 1000 * 5);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (
+      JSON.stringify(lastBubbles.current) === JSON.stringify(debouncedBubbles) ||
+      lastBubbles.current.length < debouncedBubbles.length
+    )
+      return;
+
+    const updateBubbles = async () => {
+      if (lastBubbles.current.length > debouncedBubbles.length) {
+        try {
+          await deleteBubble(contextTargetId.current);
+          contextTargetId.current = "";
+        } catch (error) {
+          console.log(`${contextTargetId.current} could not be deleted.`);
+        }
+      }
+      try {
+        await putBubbleArray(debouncedBubbles);
+      } catch (error) {
+        // TODO: Notify user
+        console.log(error);
+      }
+    };
+
+    updateBubbles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedBubbles]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -171,6 +204,9 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     window.addEventListener("resize", handleResize);
     window.addEventListener("click", hideContextMenu);
     Konva.hitOnDragEnabled = true; // For pinch zoom on touch devices -- remove if there's conflict with other pieces of code
+
+    setIsLoading(false);
+
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("click", hideContextMenu);
@@ -237,6 +273,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
   };
 
   const addChildNode = async (parentId: string, childId: string) => {
+    lastBubbles.current = bubbles;
     const newBubbles = [...bubbles];
     const [parent] = newBubbles.filter((bubble) => bubble.id === parentId);
     const [child] = newBubbles.filter((bubble) => bubble.id === childId);
@@ -260,29 +297,31 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     child.parent_node = parent.id;
     parent.child_nodes.push(child.id);
 
-    try {
-      await putBubbleArray(newBubbles);
-      setBubbles(newBubbles);
-    } catch (error) {
-      // TODO: Notify user
-      console.log(error);
-    }
+    setBubbles(newBubbles);
   };
 
   const removeBubble = async () => {
     const response = confirm("Delete this bubble?");
     if (!response) return;
-    try {
-      await deleteBubble(contextTargetId.current);
-      setBubbles((prev) => {
-        const remainingBubbles = prev.filter((bubble) => bubble.id !== contextTargetId.current);
-        return [...remainingBubbles];
-      });
-      contextTargetId.current = "";
-    } catch (error) {
-      // TODO: Notify user
-      console.log(error);
-    }
+    setBubbles((prev) => {
+      lastBubbles.current = prev;
+      const remainingBubbles = prev
+        .filter((bubble) => bubble.id !== contextTargetId.current)
+        .map((bubble) => {
+          if (bubble.parent_node === contextTargetId.current) {
+            eraseEdge(bubble.id, contextTargetId.current);
+            removeEdge(bubble.id, contextTargetId.current);
+            bubble.parent_node = null;
+          }
+          if (bubble.child_nodes.includes(contextTargetId.current)) {
+            eraseEdge(contextTargetId.current, bubble.id);
+            removeEdge(contextTargetId.current, bubble.id);
+            bubble.child_nodes = bubble.child_nodes.filter((child) => child !== contextTargetId.current);
+          }
+          return bubble;
+        });
+      return [...remainingBubbles];
+    });
   };
 
   const addEdge = (fromNode: Konva.Group, toNode: Konva.Group) => {
@@ -311,6 +350,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     const newPos = target.getAbsolutePosition(layerRef.current as Konva.Layer);
     const id = target.getAttrs().id;
     setBubbles((prev: BubbleProps[]) => {
+      lastBubbles.current = prev;
       const newArr = prev.filter((bubble) => bubble.id !== id);
       const [targetBubble] = prev.filter((bubble) => bubble.id === id);
       return [...newArr, { ...targetBubble, x: newPos.x, y: newPos.y }];
@@ -431,10 +471,10 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     const deltaY = e.evt.deltaY;
     const currentScale = e.currentTarget.scale();
     if (!currentScale) return;
-    if (deltaY < 0) {
+    if (deltaY < 0 && currentScale.x + 0.1 <= 1) {
       e.currentTarget.scale({ x: (currentScale.x += 0.1), y: (currentScale.y += 0.1) });
     }
-    if (deltaY > 0) {
+    if (deltaY > 0 && currentScale.x - 0.1 > 0.6) {
       e.currentTarget.scale({ x: (currentScale.x -= 0.1), y: (currentScale.y -= 0.1) });
     }
   };
@@ -458,6 +498,11 @@ export default function Canvas({ data, mapId }: CanvasProps) {
 
   return (
     <>
+      {isLoading && (
+        <div className="fixed top-0 right-0 bottom-0 left-0 grid place-content-center bg-white dark:bg-black opacity-25 z-50">
+          Loading...
+        </div>
+      )}
       <Stage
         ref={stageRef}
         width={canvasSize.x}
