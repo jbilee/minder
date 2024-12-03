@@ -16,8 +16,7 @@ export default function NewMapForm() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (input === "") return;
-    const result = await postMap(input);
+    const result = await postMap(input || "Untitled");
     if (result) {
       setMapId(result);
     }
