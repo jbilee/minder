@@ -13,8 +13,8 @@ export default async function MapsPage() {
       <h1 className="mb-2 text-lg font-bold">All maps</h1>
       {data?.length ? (
         <div className="grid lg:w-[56rem] grid-cols-1 sm:grid-cols-2 md:grid-cols-3 place-items-center gap-y-8">
-          {data.map(({ id, name, created_at, updated_at, thumbnail }) => (
-            <MapCard key={id} mapId={id} mapName={name} imgUrl={thumbnail} lastEdited={updated_at ?? created_at} />
+          {data.map(({ id, name, created_at, thumbnail }) => (
+            <MapCard key={id} mapId={id} mapName={name} imgUrl={thumbnail} created={created_at} />
           ))}
         </div>
       ) : (

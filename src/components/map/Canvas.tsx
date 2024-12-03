@@ -157,7 +157,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [bubbles, setBubbles] = useState<BubbleProps[]>(data);
   const [edges, setEdges] = useState<EdgeProps[]>([]);
-  const debouncedBubbles = useDebounce(bubbles, 1000 * 5);
+  const debouncedBubbles = useDebounce(bubbles, 1000 * 3);
 
   useEffect(() => {
     if (isLoading) return;
