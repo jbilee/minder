@@ -11,7 +11,7 @@ export default async function MobileNavBar() {
     // Log
   }
   return user ? (
-    <div className="sm:hidden fixed bottom-0 w-full p-4 rounded-t-2xl shadow-lg bg-white dark:bg-slate-800">
+    <div className="sm:hidden fixed bottom-0 w-full p-4 rounded-t-2xl shadow-[0_-2px_15px_rgba(0,0,0,0.1)] bg-white dark:bg-slate-800">
       <ul className="flex justify-center gap-8">
         <li>
           <Link href="/">
