@@ -12,7 +12,7 @@ export default async function MapsPage() {
     <div className="lg:max-w-4xl px-4 lg:px-0">
       <h1 className="mb-2 text-lg font-bold">All maps</h1>
       {data?.length ? (
-        <div className="grid lg:w-[56rem] grid-cols-1 sm:grid-cols-2 md:grid-cols-3 place-items-center gap-4 sm:gap-0">
+        <div className="grid lg:w-[56rem] grid-cols-1 sm:grid-cols-2 md:grid-cols-3 place-items-center gap-y-8">
           {data.map(({ id, name, created_at, updated_at, thumbnail }) => (
             <MapCard key={id} mapId={id} mapName={name} imgUrl={thumbnail} lastEdited={updated_at ?? created_at} />
           ))}
