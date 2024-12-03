@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Layer, Stage } from "react-konva";
 import Konva from "konva";
 import Bubble from "./Bubble";
@@ -539,6 +540,9 @@ export default function Canvas({ data, mapId }: CanvasProps) {
           Delete
         </button>
       </div>
+      <Link href="/maps">
+        <div className="fixed top-3 left-3 px-4 py-2 rounded-xl text-slate-50 bg-sky-700 z-40">Back</div>
+      </Link>
       <NewBubbleForm createBubble={createBubble} />
     </>
   );
