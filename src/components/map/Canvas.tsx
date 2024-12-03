@@ -272,32 +272,33 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     });
   };
 
-  const addChildNode = async (parentId: string, childId: string) => {
-    lastBubbles.current = bubbles;
-    const newBubbles = [...bubbles];
-    const [parent] = newBubbles.filter((bubble) => bubble.id === parentId);
-    const [child] = newBubbles.filter((bubble) => bubble.id === childId);
+  const addChildNode = (parentId: string, childId: string) => {
+    setBubbles((prev) => {
+      const newBubbles = [...prev];
+      const [parent] = newBubbles.filter((bubble) => bubble.id === parentId);
+      const [child] = newBubbles.filter((bubble) => bubble.id === childId);
 
-    // Remove childId from previous parent
-    if (child.parent_node) {
-      eraseEdge(childId, child.parent_node);
-      removeEdge(childId, child.parent_node);
-      const [prevParent] = newBubbles.filter((bubble) => bubble.id === child.parent_node);
-      prevParent.child_nodes = prevParent.child_nodes.filter((id) => id !== childId);
-    }
+      // Remove childId from previous parent
+      if (child.parent_node) {
+        eraseEdge(childId, child.parent_node);
+        removeEdge(childId, child.parent_node);
+        const [prevParent] = newBubbles.filter((bubble) => bubble.id === child.parent_node);
+        prevParent.child_nodes = prevParent.child_nodes.filter((id) => id !== childId);
+      }
 
-    // If the child is now the parent, reverse the relationship
-    if (parent.parent_node === childId) {
-      eraseEdge(parentId, childId);
-      removeEdge(parentId, childId);
-      parent.parent_node = null;
-      child.child_nodes = child.child_nodes.filter((id) => id !== parentId);
-    }
+      // If the child is now the parent, reverse the relationship
+      if (parent.parent_node === childId) {
+        eraseEdge(parentId, childId);
+        removeEdge(parentId, childId);
+        parent.parent_node = null;
+        child.child_nodes = child.child_nodes.filter((id) => id !== parentId);
+      }
 
-    child.parent_node = parent.id;
-    parent.child_nodes.push(child.id);
+      child.parent_node = parent.id;
+      parent.child_nodes.push(child.id);
 
-    setBubbles(newBubbles);
+      return [...newBubbles];
+    });
   };
 
   const removeBubble = async () => {
@@ -350,7 +351,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     const newPos = target.getAbsolutePosition(layerRef.current as Konva.Layer);
     const id = target.getAttrs().id;
     setBubbles((prev: BubbleProps[]) => {
-      lastBubbles.current = prev;
+      lastBubbles.current = [...prev];
       const newArr = prev.filter((bubble) => bubble.id !== id);
       const [targetBubble] = prev.filter((bubble) => bubble.id === id);
       return [...newArr, { ...targetBubble, x: newPos.x, y: newPos.y }];
@@ -441,13 +442,13 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     }
 
     // find objects in range
-    if (bubblesInRange.current.length) {
-      // push away objects in range
-      bubblesInRange.current.forEach((bubble) => {
-        pushObjectAway(dragged, bubble, updatePosition);
-      });
-      bubblesInRange.current = [];
-    }
+    // if (bubblesInRange.current.length) {
+    //   // push away objects in range
+    //   bubblesInRange.current.forEach((bubble) => {
+    //     pushObjectAway(dragged, bubble, updatePosition);
+    //   });
+    //   bubblesInRange.current = [];
+    // }
 
     updatePosition(dragged);
 
@@ -462,7 +463,6 @@ export default function Canvas({ data, mapId }: CanvasProps) {
       addChildNode(parentId, childId);
       addEdge(dragged, collisionTarget.current);
 
-      // TODO: draw line between bubbles
       collisionTarget.current = null;
     }
   };
