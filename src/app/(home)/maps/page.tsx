@@ -20,7 +20,7 @@ export default async function MapsPage() {
       ) : (
         <div className="lg:w-[56rem] p-4 text-center">You dont&apos;t have any maps yet.</div>
       )}
-      <div className="flex mt-10 justify-center">
+      <div className="flex mt-10 mb-20 justify-center">
         <Link href="/maps/new">
           <div className="w-fit px-4 py-2 rounded-xl bg-sky-700 text-slate-50">+ Add map</div>
         </Link>
