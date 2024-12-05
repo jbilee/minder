@@ -46,9 +46,7 @@ type Coords = {
   y: number;
 };
 
-type RectDimensions = {
-  x: number;
-  y: number;
+type RectDimensions = Coords & {
   width: number;
   height: number;
 };
@@ -142,9 +140,23 @@ const getEdgePoints = (from: Coords, to: Coords) => {
   return [from.x + 130, from.y + 65, to.x + 130, to.y + 65];
 };
 
+const getDistance = (p1: Coords, p2: Coords) => {
+  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+};
+
+const getCenter = (p1: Coords, p2: Coords) => {
+  return {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2,
+  };
+};
+
 export default function Canvas({ data, mapId }: CanvasProps) {
   const stageRef = useRef<null | Konva.Stage>(null);
   const layerRef = useRef<null | Konva.Layer>(null);
+  const dragStopped = useRef(false);
+  const lastDist = useRef(0);
+  const lastCenter = useRef<null | Coords>(null);
   const collisionTarget = useRef<null | Konva.Group>(null);
   const bubblesInRange = useRef<Konva.Group[]>([]);
   const contextRef = useRef<null | HTMLDivElement>(null);
@@ -468,7 +480,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     }
   };
 
-  const handleZoom = (e: KonvaEventObject<WheelEvent>) => {
+  const handleMouseZoom = (e: KonvaEventObject<WheelEvent>) => {
     const deltaY = e.evt.deltaY;
     const currentScale = e.currentTarget.scale();
     if (!currentScale) return;
@@ -478,6 +490,77 @@ export default function Canvas({ data, mapId }: CanvasProps) {
     if (deltaY > 0 && currentScale.x - 0.1 > 0.6) {
       e.currentTarget.scale({ x: (currentScale.x -= 0.1), y: (currentScale.y -= 0.1) });
     }
+  };
+
+  const handleTouchZoom = (e: KonvaEventObject<TouchEvent>) => {
+    e.evt.preventDefault();
+    if (!stageRef.current) return;
+
+    const stage = stageRef.current;
+    const touch1 = e.evt.touches[0];
+    const touch2 = e.evt.touches[1];
+
+    if (touch1 && !touch2 && !stage.isDragging() && dragStopped.current) {
+      stage.startDrag();
+      dragStopped.current = false;
+    }
+    if (touch1 && touch2) {
+      if (stage.isDragging()) {
+        dragStopped.current = true;
+        stage.stopDrag();
+      }
+
+      const p1 = {
+        x: touch1.clientX,
+        y: touch1.clientY,
+      };
+      const p2 = {
+        x: touch2.clientX,
+        y: touch2.clientY,
+      };
+
+      if (!lastCenter.current) {
+        lastCenter.current = getCenter(p1, p2);
+        return;
+      }
+
+      const newCenter = getCenter(p1, p2);
+      const dist = getDistance(p1, p2);
+
+      if (!lastDist.current) {
+        lastDist.current = dist;
+      }
+
+      const pointTo = {
+        x: (newCenter.x - stage.x()) / stage.scaleX(),
+        y: (newCenter.y - stage.y()) / stage.scaleX(),
+      };
+
+      const scale = stage.scaleX() * (dist / lastDist.current);
+      if (scale < 1 && scale > 0.6) {
+        stage.scale({ x: scale, y: scale });
+        stage.scaleX(scale);
+        stage.scaleY(scale);
+
+        const dx = newCenter.x - lastCenter.current.x;
+        const dy = newCenter.y - lastCenter.current.y;
+
+        const newPos = {
+          x: newCenter.x - pointTo.x * scale + dx,
+          y: newCenter.y - pointTo.y * scale + dy,
+        };
+
+        stage.position(newPos);
+
+        lastDist.current = dist;
+        lastCenter.current = newCenter;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    lastDist.current = 0;
+    lastCenter.current = null;
   };
 
   const handleContext = (e: KonvaEventObject<PointerEvent>) => {
@@ -509,7 +592,9 @@ export default function Canvas({ data, mapId }: CanvasProps) {
         width={canvasSize.x}
         height={canvasSize.y}
         onContextMenu={handleContext}
-        onWheel={handleZoom}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchZoom}
+        onWheel={handleMouseZoom}
         draggable
       >
         <Layer
