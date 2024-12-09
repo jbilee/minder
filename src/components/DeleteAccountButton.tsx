@@ -13,7 +13,7 @@ export default function DeleteAccountButton({ userId }: { userId: string }) {
       await deleteAccount(userId);
       router.push("/");
     } catch (e) {
-      // TODO: Notify user
+      alert(e);
     }
   };
 

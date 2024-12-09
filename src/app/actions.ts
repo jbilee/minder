@@ -52,6 +52,9 @@ export const postMap = async (name: string): Promise<string | null> => {
 };
 
 export const deleteAccount = async (userId: string) => {
+  if (userId === "user_2pxZvebk7uZHwtbKARl2tjVWUQ2") {
+    throw new Error("Demo accounts can't be deleted.");
+  }
   const clerk = await clerkClient();
   await clerk.users.deleteUser(userId);
 };
