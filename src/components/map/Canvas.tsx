@@ -612,6 +612,7 @@ export default function Canvas({ data, mapId }: CanvasProps) {
               x={elem.x}
               y={elem.y}
               createdAt={elem.created_at}
+              parentNode={elem.parent_node}
               handleCursor={changeCursor}
             />
           ))}

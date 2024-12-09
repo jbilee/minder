@@ -8,10 +8,11 @@ type BubbleProps = {
   x: number;
   y: number;
   createdAt: string;
+  parentNode: null | string;
   handleCursor: (status: string) => void;
 };
 
-export default function Bubble({ id, text, x, y, createdAt, handleCursor }: BubbleProps) {
+export default function Bubble({ id, text, x, y, createdAt, parentNode, handleCursor }: BubbleProps) {
   const [stroke, setStroke] = useState("");
 
   const handleMouseEnter = () => {
@@ -34,7 +35,7 @@ export default function Bubble({ id, text, x, y, createdAt, handleCursor }: Bubb
         fillRadialGradientStartRadius={10}
         fillRadialGradientEndPoint={{ x: 0, y: 0 }}
         fillRadialGradientEndRadius={270}
-        fillRadialGradientColorStops={[0, "#ca74ff", 1, "#00b3ef"]}
+        fillRadialGradientColorStops={[0, parentNode ? "#f6689e" : "#ca74ff", 1, parentNode ? "#7d46e2" : "#00b3ef"]}
       />
       {/* <Rect cornerRadius={10} x={-3} y={-3} width={266} height={106} onClick={test} name="barrier" /> */}
       <Circle x={20} y={110} radius={8} stroke="white" />
